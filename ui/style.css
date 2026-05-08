@@ -38,7 +38,6 @@ body, html {
     z-index: 9999;
 }
 
-/* Default position: top-center */
 #flarebit-notification-container[data-position="top-center"] {
     top: 40px;
     left: 50%;
@@ -47,7 +46,52 @@ body, html {
 }
 
 /* ============================================
-   Notification — Cinematic Style (info default)
+   Notification — Variant Tokens (CSS Variables)
+   ============================================ */
+
+.flarebit-notification {
+    /* Default: info (purple) */
+    --flarebit-color-primary: 168, 85, 247;
+    --flarebit-color-primary-bright: 192, 132, 252;
+    --flarebit-bg-from: 28, 22, 38;
+    --flarebit-bg-to: 20, 16, 28;
+    --flarebit-border: 168, 85, 247;
+}
+
+.flarebit-notification[data-variant="info"] {
+    --flarebit-color-primary: 168, 85, 247;
+    --flarebit-color-primary-bright: 192, 132, 252;
+    --flarebit-bg-from: 28, 22, 38;
+    --flarebit-bg-to: 20, 16, 28;
+    --flarebit-border: 168, 85, 247;
+}
+
+.flarebit-notification[data-variant="success"] {
+    --flarebit-color-primary: 34, 197, 94;
+    --flarebit-color-primary-bright: 74, 222, 128;
+    --flarebit-bg-from: 18, 32, 24;
+    --flarebit-bg-to: 14, 24, 18;
+    --flarebit-border: 34, 197, 94;
+}
+
+.flarebit-notification[data-variant="warning"] {
+    --flarebit-color-primary: 245, 158, 11;
+    --flarebit-color-primary-bright: 252, 211, 77;
+    --flarebit-bg-from: 36, 28, 16;
+    --flarebit-bg-to: 26, 20, 12;
+    --flarebit-border: 245, 158, 11;
+}
+
+.flarebit-notification[data-variant="error"] {
+    --flarebit-color-primary: 239, 68, 68;
+    --flarebit-color-primary-bright: 248, 113, 113;
+    --flarebit-bg-from: 38, 20, 22;
+    --flarebit-bg-to: 28, 14, 16;
+    --flarebit-border: 239, 68, 68;
+}
+
+/* ============================================
+   Notification — Layout & Structure
    ============================================ */
 
 .flarebit-notification {
@@ -77,10 +121,10 @@ body, html {
     border-radius: 18px;
     background: linear-gradient(
         135deg,
-        rgba(168, 85, 247, 0.4) 0%,
-        rgba(168, 85, 247, 0.1) 30%,
-        rgba(168, 85, 247, 0.05) 60%,
-        rgba(168, 85, 247, 0.3) 100%
+        rgba(var(--flarebit-color-primary), 0.4) 0%,
+        rgba(var(--flarebit-color-primary), 0.1) 30%,
+        rgba(var(--flarebit-color-primary), 0.05) 60%,
+        rgba(var(--flarebit-color-primary), 0.3) 100%
     );
     filter: blur(8px);
     opacity: 0.6;
@@ -97,10 +141,10 @@ body, html {
     gap: 16px;
     background: linear-gradient(
         180deg,
-        rgba(28, 22, 38, 0.95) 0%,
-        rgba(20, 16, 28, 0.95) 100%
+        rgba(var(--flarebit-bg-from), 0.95) 0%,
+        rgba(var(--flarebit-bg-to), 0.95) 100%
     );
-    border: 1px solid rgba(168, 85, 247, 0.25);
+    border: 1px solid rgba(var(--flarebit-border), 0.25);
     border-radius: 18px;
     padding: 16px 20px;
     box-shadow: 
@@ -126,8 +170,8 @@ body, html {
     border-radius: 50%;
     background: radial-gradient(
         circle,
-        rgba(168, 85, 247, 0.25) 0%,
-        rgba(168, 85, 247, 0.08) 50%,
+        rgba(var(--flarebit-color-primary), 0.25) 0%,
+        rgba(var(--flarebit-color-primary), 0.08) 50%,
         transparent 80%
     );
     display: flex;
@@ -141,7 +185,11 @@ body, html {
     position: absolute;
     inset: 0;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(168, 85, 247, 0.4), transparent 70%);
+    background: radial-gradient(
+        circle,
+        rgba(var(--flarebit-color-primary), 0.4),
+        transparent 70%
+    );
     animation: flarebit-pulse-aura 2.5s ease-in-out infinite;
 }
 
@@ -149,10 +197,14 @@ body, html {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #c084fc 0%, #a855f7 100%);
+    background: linear-gradient(
+        135deg,
+        rgb(var(--flarebit-color-primary-bright)) 0%,
+        rgb(var(--flarebit-color-primary)) 100%
+    );
     box-shadow: 
-        0 0 12px rgba(168, 85, 247, 0.8),
-        0 0 24px rgba(168, 85, 247, 0.4);
+        0 0 12px rgba(var(--flarebit-color-primary), 0.8),
+        0 0 24px rgba(var(--flarebit-color-primary), 0.4);
     position: relative;
     z-index: 2;
 }
@@ -209,8 +261,8 @@ body, html {
 .flarebit-notification__meta-icon {
     width: 16px;
     height: 16px;
-    color: #a855f7;
-    filter: drop-shadow(0 0 4px rgba(168, 85, 247, 0.5));
+    color: rgb(var(--flarebit-color-primary));
+    filter: drop-shadow(0 0 4px rgba(var(--flarebit-color-primary), 0.5));
 }
 
 .flarebit-notification__meta-time {

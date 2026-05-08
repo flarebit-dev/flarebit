@@ -2,16 +2,12 @@
 -- FLAREBIT — CLIENT
 -- ============================================
 
-local resourceName = GetCurrentResourceName()
-
 print('^5[Flarebit]^7 Client loaded.')
 
 -- ============================================
 -- PUBLIC API
 -- ============================================
 
---- Show a notification
---- @param options table { title, subtitle, duration, variant }
 local function notify(options)
     options = options or {}
 
@@ -27,19 +23,48 @@ local function notify(options)
     })
 end
 
--- Export so andere Resources es nutzen können:
--- exports.flarebit:notify({ title = '...', subtitle = '...' })
 exports('notify', notify)
 
 -- ============================================
--- TEST COMMAND
+-- TEST COMMANDS
 -- ============================================
 
-RegisterCommand('flarebit', function(source, args, rawCommand)
+RegisterCommand('flarebit', function()
     notify({
         title = 'Flarebit is alive',
         subtitle = 'System online and operational.',
-        duration = 4000,
         variant = 'info'
+    })
+end, false)
+
+RegisterCommand('fb_info', function()
+    notify({
+        title = 'New update available',
+        subtitle = 'Version 0.2.0 is ready to install.',
+        variant = 'info'
+    })
+end, false)
+
+RegisterCommand('fb_success', function()
+    notify({
+        title = 'Payment successful',
+        subtitle = 'Your transaction has been completed.',
+        variant = 'success'
+    })
+end, false)
+
+RegisterCommand('fb_warning', function()
+    notify({
+        title = 'Low fuel detected',
+        subtitle = 'Please refuel at the next station.',
+        variant = 'warning'
+    })
+end, false)
+
+RegisterCommand('fb_error', function()
+    notify({
+        title = 'Connection lost',
+        subtitle = 'Unable to reach the server. Retrying...',
+        variant = 'error'
     })
 end, false)
