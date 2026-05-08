@@ -761,3 +761,149 @@ body, html {
     background: rgba(var(--flarebit-color-primary), 0.7);
     box-shadow: none;
 }
+/* ============================================
+   Action Buttons
+   ============================================ */
+
+.flarebit-notification__main {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+}
+
+.flarebit-notification[data-has-actions="true"] .flarebit-notification__inner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+}
+
+.flarebit-notification__actions {
+    display: flex;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    width: 100%;
+    justify-content: flex-end;
+}
+
+.flarebit-notification__action {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.85);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s var(--flarebit-ease-out);
+    letter-spacing: -0.1px;
+}
+
+.flarebit-notification__action:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+}
+
+.flarebit-notification__action[data-style="primary"] {
+    background: rgba(var(--flarebit-color-primary), 0.2);
+    border-color: rgba(var(--flarebit-color-primary), 0.4);
+    color: rgb(var(--flarebit-color-primary-bright));
+}
+
+.flarebit-notification__action[data-style="primary"]:hover {
+    background: rgba(var(--flarebit-color-primary), 0.3);
+    border-color: rgba(var(--flarebit-color-primary), 0.6);
+    box-shadow: 0 0 16px rgba(var(--flarebit-color-primary), 0.3);
+}
+
+.flarebit-notification__action[data-style="danger"] {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.35);
+    color: rgb(248, 113, 113);
+}
+
+.flarebit-notification__action[data-style="danger"]:hover {
+    background: rgba(239, 68, 68, 0.25);
+    border-color: rgba(239, 68, 68, 0.5);
+}
+
+/* Cinematic theme: action buttons get sci-fi treatment */
+#flarebit-app[data-theme="cinematic"] .flarebit-notification__actions {
+    border-top-color: rgba(var(--flarebit-color-primary), 0.2);
+}
+
+#flarebit-app[data-theme="cinematic"] .flarebit-notification__action {
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 12px;
+    font-weight: 600;
+}
+/* ============================================
+   Edge Cases & Polish
+   ============================================ */
+
+/* Long text handling */
+.flarebit-notification__title {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
+
+.flarebit-notification__subtitle {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* When no subtitle: tighter layout */
+.flarebit-notification__subtitle:empty {
+    display: none;
+}
+
+.flarebit-notification__subtitle:empty + * {
+    margin-top: 0;
+}
+
+/* Better tap-targets on mobile (just in case) */
+.flarebit-notification__action {
+    min-height: 36px;
+    min-width: 80px;
+}
+
+/* Prevent FOUC on initial render */
+.flarebit-notification:not(.visible):not(.exiting) {
+    pointer-events: none;
+}
+
+/* Smooth transitions for action buttons */
+.flarebit-notification__actions {
+    opacity: 0;
+    animation: flarebit-actions-fade-in 0.3s ease-out 0.2s forwards;
+}
+
+@keyframes flarebit-actions-fade-in {
+    to { opacity: 1; }
+}
+
+/* Performance hint for animations */
+.flarebit-notification {
+    contain: layout style;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .flarebit-notification {
+        transition-duration: 0.1s !important;
+    }
+    
+    .flarebit-notification__dot-outer::before,
+    #flarebit-app[data-theme="cinematic"] .flarebit-notification__inner::after {
+        animation: none !important;
+    }
+}

@@ -3,9 +3,10 @@ game 'gta5'
 
 name 'flarebit'
 author 'Flarebit'
-description 'Cinematic UI for modern FiveM.'
-version '0.1.0'
+description 'Cinematic UI for modern FiveM. — flarebit.dev'
+version '0.10.0'
 repository 'https://github.com/flarebit-dev/flarebit'
+url 'https://flarebit.dev'
 
 ui_page 'ui/index.html'
 
@@ -22,3 +23,5 @@ files {
     'ui/style.css',
     'ui/script.js'
 }
+
+lua54 'yes'

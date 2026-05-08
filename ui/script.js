@@ -17,7 +17,7 @@
     const activeNotifications = new Map();
 
     // ============================================
-    // Sound System (Web Audio API)
+    // Sound System
     // ============================================
 
     let audioContext = null;
@@ -29,101 +29,75 @@
             try {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
             } catch (e) {
-                console.warn('[Flarebit] Web Audio not supported');
                 return null;
             }
         }
         return audioContext;
     }
 
-    /**
-     * Plays a sound for the given variant.
-     * Each variant has a distinct sonic identity.
-     */
     function playSound(variant) {
         if (globalMuted) return;
         const ctx = getAudioContext();
         if (!ctx) return;
-
-        // Resume if suspended (browser autoplay policy)
-        if (ctx.state === 'suspended') {
-            ctx.resume();
-        }
+        if (ctx.state === 'suspended') ctx.resume();
 
         const now = ctx.currentTime;
 
         switch (variant) {
-            case 'success':
-                playSuccessSound(ctx, now);
-                break;
-            case 'error':
-                playErrorSound(ctx, now);
-                break;
-            case 'warning':
-                playWarningSound(ctx, now);
-                break;
-            case 'info':
-            default:
-                playInfoSound(ctx, now);
-                break;
+            case 'success': playSuccessSound(ctx, now); break;
+            case 'error': playErrorSound(ctx, now); break;
+            case 'warning': playWarningSound(ctx, now); break;
+            default: playInfoSound(ctx, now); break;
         }
     }
 
-    // Info: subtle two-tone chime (ascending)
     function playInfoSound(ctx, now) {
         const gain = ctx.createGain();
         gain.connect(ctx.destination);
         gain.gain.setValueAtTime(0, now);
         gain.gain.linearRampToValueAtTime(globalVolume * 0.5, now + 0.02);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-
-        const osc1 = ctx.createOscillator();
-        osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(880, now);
-        osc1.frequency.linearRampToValueAtTime(1100, now + 0.08);
-        osc1.connect(gain);
-        osc1.start(now);
-        osc1.stop(now + 0.4);
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, now);
+        osc.frequency.linearRampToValueAtTime(1100, now + 0.08);
+        osc.connect(gain);
+        osc.start(now);
+        osc.stop(now + 0.4);
     }
 
-    // Success: pleasant bright two-note (major third up)
     function playSuccessSound(ctx, now) {
         const gain = ctx.createGain();
         gain.connect(ctx.destination);
         gain.gain.setValueAtTime(0, now);
         gain.gain.linearRampToValueAtTime(globalVolume * 0.6, now + 0.02);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-
         const osc1 = ctx.createOscillator();
         osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(659.25, now); // E5
+        osc1.frequency.setValueAtTime(659.25, now);
         osc1.connect(gain);
         osc1.start(now);
         osc1.stop(now + 0.15);
-
         const osc2 = ctx.createOscillator();
         osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(987.77, now + 0.1); // B5
+        osc2.frequency.setValueAtTime(987.77, now + 0.1);
         osc2.connect(gain);
         osc2.start(now + 0.1);
         osc2.stop(now + 0.5);
     }
 
-    // Warning: descending two-tone (attention-grabbing but not alarming)
     function playWarningSound(ctx, now) {
         const gain = ctx.createGain();
         gain.connect(ctx.destination);
         gain.gain.setValueAtTime(0, now);
         gain.gain.linearRampToValueAtTime(globalVolume * 0.55, now + 0.02);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-
         const osc1 = ctx.createOscillator();
         osc1.type = 'triangle';
         osc1.frequency.setValueAtTime(660, now);
         osc1.connect(gain);
         osc1.start(now);
         osc1.stop(now + 0.18);
-
         const osc2 = ctx.createOscillator();
         osc2.type = 'triangle';
         osc2.frequency.setValueAtTime(495, now + 0.18);
@@ -132,25 +106,45 @@
         osc2.stop(now + 0.5);
     }
 
-    // Error: short low buzz (urgent but tasteful)
     function playErrorSound(ctx, now) {
         const gain = ctx.createGain();
         gain.connect(ctx.destination);
         gain.gain.setValueAtTime(0, now);
         gain.gain.linearRampToValueAtTime(globalVolume * 0.55, now + 0.01);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-
-        const osc1 = ctx.createOscillator();
-        osc1.type = 'sawtooth';
-        osc1.frequency.setValueAtTime(220, now);
-        osc1.frequency.exponentialRampToValueAtTime(110, now + 0.3);
-        osc1.connect(gain);
-        osc1.start(now);
-        osc1.stop(now + 0.35);
+        const osc = ctx.createOscillator();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.exponentialRampToValueAtTime(110, now + 0.3);
+        osc.connect(gain);
+        osc.start(now);
+        osc.stop(now + 0.35);
     }
 
     // ============================================
-    // Icons per Variant
+    // Color Helpers
+    // ============================================
+
+    function hexToRgb(hex) {
+        if (!hex || typeof hex !== 'string') return null;
+        const cleaned = hex.replace('#', '');
+        if (cleaned.length !== 6) return null;
+        const r = parseInt(cleaned.substring(0, 2), 16);
+        const g = parseInt(cleaned.substring(2, 4), 16);
+        const b = parseInt(cleaned.substring(4, 6), 16);
+        if (isNaN(r) || isNaN(g) || isNaN(b)) return null;
+        return `${r}, ${g}, ${b}`;
+    }
+
+    function lightenRgb(rgbStr, amount = 30) {
+        const parts = rgbStr.split(',').map(s => parseInt(s.trim()));
+        if (parts.length !== 3) return rgbStr;
+        const lightened = parts.map(c => Math.min(255, c + amount));
+        return lightened.join(', ');
+    }
+
+    // ============================================
+    // Icons
     // ============================================
 
     const ICONS = {
@@ -178,31 +172,59 @@
 
     function createNotificationElement(payload) {
         const variant = payload.variant || 'info';
-        const iconSvg = ICONS[variant] || ICONS.info;
+        const iconSvg = payload.icon || ICONS[variant] || ICONS.info;
 
         const el = document.createElement('div');
         el.className = 'flarebit-notification';
         el.dataset.id = payload.id;
         el.dataset.variant = variant;
 
+        if (payload.persistent) el.dataset.persistent = 'true';
+        if (payload.actions && payload.actions.length > 0) el.dataset.hasActions = 'true';
+
+        // Custom color override
+        if (payload.color) {
+            const rgb = hexToRgb(payload.color) || payload.color;
+            const bright = lightenRgb(rgb, 40);
+            el.style.setProperty('--flarebit-color-primary', rgb);
+            el.style.setProperty('--flarebit-color-primary-bright', bright);
+        }
+
+        // Build action buttons HTML if any
+        let actionsHtml = '';
+        if (payload.actions && payload.actions.length > 0) {
+            actionsHtml = `
+                <div class="flarebit-notification__actions">
+                    ${payload.actions.map(a => `
+                        <button class="flarebit-notification__action" data-style="${a.style || 'default'}" data-action-id="${a.id}">
+                            ${a.label}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+        }
+
         el.innerHTML = `
             <div class="flarebit-notification__glow"></div>
             <div class="flarebit-notification__inner">
-                <div class="flarebit-notification__icon">
-                    <div class="flarebit-notification__dot-outer">
-                        <div class="flarebit-notification__dot-inner"></div>
+                <div class="flarebit-notification__main">
+                    <div class="flarebit-notification__icon">
+                        <div class="flarebit-notification__dot-outer">
+                            <div class="flarebit-notification__dot-inner"></div>
+                        </div>
+                    </div>
+                    <div class="flarebit-notification__content">
+                        <div class="flarebit-notification__title"></div>
+                        <div class="flarebit-notification__subtitle"></div>
+                    </div>
+                    <div class="flarebit-notification__meta">
+                        <svg class="flarebit-notification__meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            ${iconSvg}
+                        </svg>
+                        <span class="flarebit-notification__meta-time">now</span>
                     </div>
                 </div>
-                <div class="flarebit-notification__content">
-                    <div class="flarebit-notification__title"></div>
-                    <div class="flarebit-notification__subtitle"></div>
-                </div>
-                <div class="flarebit-notification__meta">
-                    <svg class="flarebit-notification__meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        ${iconSvg}
-                    </svg>
-                    <span class="flarebit-notification__meta-time">now</span>
-                </div>
+                ${actionsHtml}
                 <div class="flarebit-notification__progress">
                     <div class="flarebit-notification__progress-fill"></div>
                 </div>
@@ -212,7 +234,32 @@
         el.querySelector('.flarebit-notification__title').textContent = payload.title || '';
         el.querySelector('.flarebit-notification__subtitle').textContent = payload.subtitle || '';
 
+        // Attach action handlers
+        if (payload.actions && payload.actions.length > 0) {
+            el.querySelectorAll('.flarebit-notification__action').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const actionId = btn.dataset.actionId;
+                    triggerAction(payload.id, actionId);
+                    removeNotification(payload.id);
+                });
+            });
+        }
+
         return el;
+    }
+
+    // ============================================
+    // Action Trigger (callback to Lua)
+    // ============================================
+
+    function triggerAction(notificationId, actionId) {
+        // POST to Lua via NUI callback
+        fetch(`https://${GetParentResourceName ? GetParentResourceName() : 'flarebit'}/flarebit:actionClick`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notificationId, actionId })
+        }).catch(() => {});
     }
 
     // ============================================
@@ -221,32 +268,23 @@
 
     function captureFirstPositions(container) {
         const positions = new Map();
-        const children = container.querySelectorAll('.flarebit-notification');
-        children.forEach((child) => {
-            const id = child.dataset.id;
-            positions.set(id, child.getBoundingClientRect().top);
+        container.querySelectorAll('.flarebit-notification').forEach((child) => {
+            positions.set(child.dataset.id, child.getBoundingClientRect().top);
         });
         return positions;
     }
 
     function animateFromFirstPositions(container, firstPositions) {
-        const children = container.querySelectorAll('.flarebit-notification');
-        children.forEach((child) => {
+        container.querySelectorAll('.flarebit-notification').forEach((child) => {
             const id = child.dataset.id;
             const firstTop = firstPositions.get(id);
             if (firstTop === undefined) return;
-
             const lastTop = child.getBoundingClientRect().top;
             const deltaY = firstTop - lastTop;
-
             if (Math.abs(deltaY) < 1) return;
-
-            const isEntering = !child.classList.contains('visible');
-            if (isEntering) return;
-
+            if (!child.classList.contains('visible')) return;
             child.style.transition = 'none';
             child.style.transform = `translateY(${deltaY}px)`;
-
             requestAnimationFrame(() => {
                 child.style.transition = `transform ${ANIMATION_DURATION_REPOSITION}ms cubic-bezier(0.22, 1, 0.36, 1)`;
                 child.style.transform = '';
@@ -255,66 +293,50 @@
     }
 
     // ============================================
-    // Progress Bar Animation
+    // Progress Bar
     // ============================================
 
     function startProgressAnimation(el, duration) {
         const fill = el.querySelector('.flarebit-notification__progress-fill');
         if (!fill) return;
-
         return fill.animate(
-            [
-                { transform: 'scaleX(1)' },
-                { transform: 'scaleX(0)' }
-            ],
-            {
-                duration: duration,
-                easing: 'linear',
-                fill: 'forwards'
-            }
+            [{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }],
+            { duration, easing: 'linear', fill: 'forwards' }
         );
     }
 
     // ============================================
-    // Hover Pause / Click Dismiss
+    // Hover / Click Handlers
     // ============================================
 
-    function attachHoverHandlers(el, id) {
-        el.addEventListener('mouseenter', () => {
-            const entry = activeNotifications.get(id);
-            if (!entry || entry.paused) return;
+    function attachHoverHandlers(el, id, persistent) {
+        if (!persistent) {
+            el.addEventListener('mouseenter', () => {
+                const entry = activeNotifications.get(id);
+                if (!entry || entry.paused) return;
+                const elapsed = Date.now() - entry.startTime;
+                entry.remaining = Math.max(0, entry.duration - elapsed);
+                clearTimeout(entry.timeout);
+                entry.paused = true;
+                if (entry.progressAnimation) entry.progressAnimation.pause();
+            });
 
-            const elapsed = Date.now() - entry.startTime;
-            const remaining = Math.max(0, entry.duration - elapsed);
+            el.addEventListener('mouseleave', () => {
+                const entry = activeNotifications.get(id);
+                if (!entry || !entry.paused) return;
+                entry.paused = false;
+                entry.startTime = Date.now();
+                entry.duration = entry.remaining;
+                entry.timeout = setTimeout(() => removeNotification(id), entry.remaining);
+                if (entry.progressAnimation) entry.progressAnimation.play();
+            });
+        }
 
-            clearTimeout(entry.timeout);
-            entry.paused = true;
-            entry.remaining = remaining;
-
-            if (entry.progressAnimation) {
-                entry.progressAnimation.pause();
-            }
-        });
-
-        el.addEventListener('mouseleave', () => {
-            const entry = activeNotifications.get(id);
-            if (!entry || !entry.paused) return;
-
-            entry.paused = false;
-            entry.startTime = Date.now();
-            entry.duration = entry.remaining;
-            entry.timeout = setTimeout(() => {
-                removeNotification(id);
-            }, entry.remaining);
-
-            if (entry.progressAnimation) {
-                entry.progressAnimation.play();
-            }
-        });
-
-        el.addEventListener('click', () => {
-            removeNotification(id);
-        });
+        // Click-to-dismiss only if no actions (otherwise actions handle clicks)
+        const hasActions = el.dataset.hasActions === 'true';
+        if (!hasActions) {
+            el.addEventListener('click', () => removeNotification(id));
+        }
     }
 
     // ============================================
@@ -322,55 +344,44 @@
     // ============================================
 
     function showNotification(payload) {
-        const position = VALID_POSITIONS.includes(payload.position) 
-            ? payload.position 
-            : DEFAULT_POSITION;
-
+        const position = VALID_POSITIONS.includes(payload.position) ? payload.position : DEFAULT_POSITION;
         const container = getContainerForPosition(position);
-        if (!container) {
-            console.error('[Flarebit] Container not found for position:', position);
-            return;
-        }
+        if (!container) return;
 
         const inThisPosition = getNotificationsByPosition(position);
         if (inThisPosition.length >= MAX_NOTIFICATIONS_PER_POSITION) {
-            const oldest = inThisPosition[0];
-            removeNotification(oldest.id, true);
+            removeNotification(inThisPosition[0].id, true);
         }
 
         const firstPositions = captureFirstPositions(container);
-
         const el = createNotificationElement(payload);
         container.insertBefore(el, container.firstChild);
-
         animateFromFirstPositions(container, firstPositions);
 
         requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                el.classList.add('visible');
-            });
+            requestAnimationFrame(() => el.classList.add('visible'));
         });
 
-        attachHoverHandlers(el, payload.id);
+        attachHoverHandlers(el, payload.id, payload.persistent);
 
-        // Play sound (unless explicitly muted)
         if (payload.sound !== false) {
             playSound(payload.variant || 'info');
         }
 
+        const isPersistent = payload.persistent === true;
         const duration = payload.duration || 4000;
 
-        setTimeout(() => {
-            const animation = startProgressAnimation(el, duration);
-            const entry = activeNotifications.get(payload.id);
-            if (entry) {
-                entry.progressAnimation = animation;
-            }
-        }, 100);
+        // Only set timeout + progress if not persistent
+        let timeoutId = null;
+        if (!isPersistent) {
+            setTimeout(() => {
+                const animation = startProgressAnimation(el, duration);
+                const entry = activeNotifications.get(payload.id);
+                if (entry) entry.progressAnimation = animation;
+            }, 100);
 
-        const timeoutId = setTimeout(() => {
-            removeNotification(payload.id);
-        }, duration);
+            timeoutId = setTimeout(() => removeNotification(payload.id), duration);
+        }
 
         activeNotifications.set(payload.id, {
             id: payload.id,
@@ -382,6 +393,7 @@
             remaining: duration,
             progressAnimation: null,
             position: position,
+            persistent: isPersistent,
             payload: payload
         });
     }
@@ -390,12 +402,8 @@
         const entry = activeNotifications.get(id);
         if (!entry) return;
 
-        clearTimeout(entry.timeout);
-
-        if (entry.progressAnimation) {
-            entry.progressAnimation.cancel();
-        }
-
+        if (entry.timeout) clearTimeout(entry.timeout);
+        if (entry.progressAnimation) entry.progressAnimation.cancel();
         activeNotifications.delete(id);
 
         const el = entry.element;
@@ -411,19 +419,20 @@
 
         setTimeout(() => {
             const firstPositions = container ? captureFirstPositions(container) : new Map();
-
-            if (el.parentNode) {
-                el.parentNode.removeChild(el);
-            }
-
-            if (container) {
-                animateFromFirstPositions(container, firstPositions);
-            }
+            if (el.parentNode) el.parentNode.removeChild(el);
+            if (container) animateFromFirstPositions(container, firstPositions);
         }, immediate ? 0 : ANIMATION_DURATION_EXIT);
     }
 
     // ============================================
-// ============================================
+    // GetParentResourceName fallback (for fetch URL)
+    // ============================================
+
+    if (typeof GetParentResourceName === 'undefined') {
+        window.GetParentResourceName = function() { return 'flarebit'; };
+    }
+
+    // ============================================
     // Message Handler
     // ============================================
 
@@ -439,14 +448,10 @@
                 if (data.id) removeNotification(data.id);
                 break;
             case 'flarebit:dismissAll':
-                Array.from(activeNotifications.keys()).forEach((id) => {
-                    removeNotification(id);
-                });
+                Array.from(activeNotifications.keys()).forEach(id => removeNotification(id));
                 break;
             case 'flarebit:setVolume':
-                if (typeof data.volume === 'number') {
-                    globalVolume = Math.max(0, Math.min(1, data.volume));
-                }
+                if (typeof data.volume === 'number') globalVolume = Math.max(0, Math.min(1, data.volume));
                 break;
             case 'flarebit:setMuted':
                 globalMuted = !!data.muted;
@@ -457,23 +462,16 @@
                     if (app) app.dataset.theme = data.theme;
                 }
                 break;
-            default:
-                console.warn('[Flarebit] Unknown action:', data.action);
         }
     });
 
-    // ============================================
-    // Audio Init Hack (browser autoplay policy)
-    // ============================================
-    // First user interaction unlocks audio. We trigger it on first message.
+    // Audio unlock on first interaction
     let audioUnlocked = false;
     function unlockAudio() {
         if (audioUnlocked) return;
         const ctx = getAudioContext();
         if (ctx && ctx.state === 'suspended') {
-            ctx.resume().then(() => {
-                audioUnlocked = true;
-            });
+            ctx.resume().then(() => audioUnlocked = true);
         } else {
             audioUnlocked = true;
         }
