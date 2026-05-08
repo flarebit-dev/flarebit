@@ -5,6 +5,7 @@ name 'flarebit'
 author 'Flarebit'
 description 'Cinematic UI for modern FiveM.'
 version '0.1.0'
+repository 'https://github.com/flarebit-dev/flarebit'
 
 ui_page 'ui/index.html'
 
