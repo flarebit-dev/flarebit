@@ -250,3 +250,67 @@ RegisterCommand('fb_mute', function()
     setMuted(isMuted)
     print('^5[Flarebit]^7 Muted: ' .. tostring(isMuted))
 end, false)
+-- ============================================
+-- Theme API
+-- ============================================
+
+local function setTheme(theme)
+    SendNUIMessage({
+        action = 'flarebit:setTheme',
+        theme = theme
+    })
+end
+
+exports('setTheme', setTheme)
+
+-- ============================================
+-- STACK 8 TEST: Themes
+-- ============================================
+
+RegisterCommand('fb_theme_refined', function()
+    setTheme('refined')
+    notify({ title = 'Refined Theme', subtitle = 'Production-ready, subtle, premium.', variant = 'info' })
+end, false)
+
+RegisterCommand('fb_theme_cinematic', function()
+    setTheme('cinematic')
+    notify({ title = 'Cinematic Theme', subtitle = 'Sci-fi showcase mode.', variant = 'info' })
+end, false)
+
+RegisterCommand('fb_theme_minimal', function()
+    setTheme('minimal')
+    notify({ title = 'Minimal Theme', subtitle = 'Clean, monochrome, focused.', variant = 'info' })
+end, false)
+
+-- Show all 4 variants in current theme
+RegisterCommand('fb_theme_demo', function()
+    local variants = { 'info', 'success', 'warning', 'error' }
+    local titles = { 'Information', 'Success', 'Warning', 'Error' }
+    local subs = {
+        'This is an info message.',
+        'Operation completed successfully.',
+        'Please review your settings.',
+        'Something went wrong.'
+    }
+    for i = 1, 4 do
+        Wait(400)
+        notify({
+            title = titles[i],
+            subtitle = subs[i],
+            variant = variants[i],
+            duration = 8000
+        })
+    end
+end, false)
+
+-- Quick theme cycle for showcase
+RegisterCommand('fb_theme_cycle', function()
+    setTheme('refined')
+    notify({ title = 'Refined', subtitle = 'Production theme.', variant = 'info', duration = 3000 })
+    Wait(3500)
+    setTheme('cinematic')
+    notify({ title = 'Cinematic', subtitle = 'Showcase theme.', variant = 'success', duration = 3000 })
+    Wait(3500)
+    setTheme('minimal')
+    notify({ title = 'Minimal', subtitle = 'Clean theme.', variant = 'warning', duration = 3000 })
+end, false)

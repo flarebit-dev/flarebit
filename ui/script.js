@@ -423,6 +423,7 @@
     }
 
     // ============================================
+// ============================================
     // Message Handler
     // ============================================
 
@@ -449,6 +450,12 @@
                 break;
             case 'flarebit:setMuted':
                 globalMuted = !!data.muted;
+                break;
+            case 'flarebit:setTheme':
+                if (data.theme && ['refined', 'cinematic', 'minimal'].includes(data.theme)) {
+                    const app = document.getElementById('flarebit-app');
+                    if (app) app.dataset.theme = data.theme;
+                }
                 break;
             default:
                 console.warn('[Flarebit] Unknown action:', data.action);
