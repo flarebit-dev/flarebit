@@ -7,11 +7,9 @@
 
     const CONTAINER_ID = 'flarebit-notification-container';
     const MAX_NOTIFICATIONS = 5;
-    const ANIMATION_DURATION_ENTER = 550;
     const ANIMATION_DURATION_EXIT = 400;
     const ANIMATION_DURATION_REPOSITION = 500;
 
-    // Active notifications: id -> { element, timeout, remaining, startTime, paused, payload }
     const activeNotifications = new Map();
 
     // ============================================
@@ -56,6 +54,9 @@
                     </svg>
                     <span class="flarebit-notification__meta-time">now</span>
                 </div>
+                <div class="flarebit-notification__progress">
+                    <div class="flarebit-notification__progress-fill"></div>
+                </div>
             </div>
         `;
 
@@ -91,11 +92,7 @@
 
             if (Math.abs(deltaY) < 1) return;
 
-            // Capture current transform if any (during entry animation)
-            const currentTransform = window.getComputedStyle(child).transform;
             const isEntering = !child.classList.contains('visible');
-
-            // Don't disrupt entry animations
             if (isEntering) return;
 
             child.style.transition = 'none';
@@ -109,6 +106,30 @@
     }
 
     // ============================================
+    // Progress Bar Animation
+    // ============================================
+
+    function startProgressAnimation(el, duration) {
+        const fill = el.querySelector('.flarebit-notification__progress-fill');
+        if (!fill) return;
+
+        // Use Web Animations API for accurate pausing
+        const animation = fill.animate(
+            [
+                { transform: 'scaleX(1)' },
+                { transform: 'scaleX(0)' }
+            ],
+            {
+                duration: duration,
+                easing: 'linear',
+                fill: 'forwards'
+            }
+        );
+
+        return animation;
+    }
+
+    // ============================================
     // Hover Pause / Resume
     // ============================================
 
@@ -117,29 +138,36 @@
             const entry = activeNotifications.get(id);
             if (!entry || entry.paused) return;
 
-            // Calculate remaining time
             const elapsed = Date.now() - entry.startTime;
             const remaining = Math.max(0, entry.duration - elapsed);
 
             clearTimeout(entry.timeout);
             entry.paused = true;
             entry.remaining = remaining;
+
+            // Pause progress animation
+            if (entry.progressAnimation) {
+                entry.progressAnimation.pause();
+            }
         });
 
         el.addEventListener('mouseleave', () => {
             const entry = activeNotifications.get(id);
             if (!entry || !entry.paused) return;
 
-            // Resume with remaining time
             entry.paused = false;
             entry.startTime = Date.now();
             entry.duration = entry.remaining;
             entry.timeout = setTimeout(() => {
                 removeNotification(id);
             }, entry.remaining);
+
+            // Resume progress animation
+            if (entry.progressAnimation) {
+                entry.progressAnimation.play();
+            }
         });
 
-        // Click to dismiss
         el.addEventListener('click', () => {
             removeNotification(id);
         });
@@ -156,34 +184,38 @@
             return;
         }
 
-        // Enforce max — remove oldest if at limit
         if (activeNotifications.size >= MAX_NOTIFICATIONS) {
             const oldestId = activeNotifications.keys().next().value;
             removeNotification(oldestId, true);
         }
 
-        // Capture positions BEFORE inserting new
         const firstPositions = captureFirstPositions(container);
 
-        // Create + insert new at TOP
         const el = createNotificationElement(payload);
         container.insertBefore(el, container.firstChild);
 
-        // Animate existing notifications (reposition)
         animateFromFirstPositions(container, firstPositions);
 
-        // Trigger enter animation
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 el.classList.add('visible');
             });
         });
 
-        // Attach hover handlers
         attachHoverHandlers(el, payload.id);
 
-        // Schedule auto-hide
         const duration = payload.duration || 4000;
+
+        // Start progress bar animation (slight delay to sync with entry)
+        setTimeout(() => {
+            const animation = startProgressAnimation(el, duration);
+
+            const entry = activeNotifications.get(payload.id);
+            if (entry) {
+                entry.progressAnimation = animation;
+            }
+        }, 100);
+
         const timeoutId = setTimeout(() => {
             removeNotification(payload.id);
         }, duration);
@@ -195,44 +227,47 @@
             startTime: Date.now(),
             paused: false,
             remaining: duration,
+            progressAnimation: null,
             payload: payload
         });
     }
 
     function removeNotification(id, immediate = false) {
-    const entry = activeNotifications.get(id);
-    if (!entry) return;
+        const entry = activeNotifications.get(id);
+        if (!entry) return;
 
-    clearTimeout(entry.timeout);
-    activeNotifications.delete(id);
+        clearTimeout(entry.timeout);
 
-    const el = entry.element;
-    const container = document.getElementById(CONTAINER_ID);
-
-    // Clear any FLIP-leftover transforms BEFORE adding exit class
-    el.style.transition = '';
-    el.style.transform = '';
-
-    // Trigger exit animation in next frame (so styles reset first)
-    requestAnimationFrame(() => {
-        el.classList.remove('visible');
-        el.classList.add('exiting');
-    });
-
-    // Capture positions for the OTHER notifications
-    setTimeout(() => {
-        const firstPositions = container ? captureFirstPositions(container) : new Map();
-        
-        if (el.parentNode) {
-            el.parentNode.removeChild(el);
+        // Cancel progress animation
+        if (entry.progressAnimation) {
+            entry.progressAnimation.cancel();
         }
 
-        // Animate remaining notifications to fill gap
-        if (container) {
-            animateFromFirstPositions(container, firstPositions);
-        }
-    }, immediate ? 0 : ANIMATION_DURATION_EXIT);
-}
+        activeNotifications.delete(id);
+
+        const el = entry.element;
+        const container = document.getElementById(CONTAINER_ID);
+
+        el.style.transition = '';
+        el.style.transform = '';
+
+        requestAnimationFrame(() => {
+            el.classList.remove('visible');
+            el.classList.add('exiting');
+        });
+
+        setTimeout(() => {
+            const firstPositions = container ? captureFirstPositions(container) : new Map();
+
+            if (el.parentNode) {
+                el.parentNode.removeChild(el);
+            }
+
+            if (container) {
+                animateFromFirstPositions(container, firstPositions);
+            }
+        }, immediate ? 0 : ANIMATION_DURATION_EXIT);
+    }
 
     // ============================================
     // Message Handler
