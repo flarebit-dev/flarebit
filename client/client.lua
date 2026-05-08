@@ -68,3 +68,33 @@ RegisterCommand('fb_error', function()
         variant = 'error'
     })
 end, false)
+-- ============================================
+-- STACK 3 TEST: Multi-Notification Tests
+-- ============================================
+
+-- Spawn 3 verschiedene Notifications hintereinander
+RegisterCommand('fb_stack', function()
+    local variants = { 'info', 'success', 'warning', 'error' }
+    for i = 1, 4 do
+        Wait(300)
+        exports.flarebit:notify({
+            title = 'Notification ' .. i,
+            subtitle = 'This is a ' .. variants[i] .. ' message.',
+            variant = variants[i],
+            duration = 6000
+        })
+    end
+end, false)
+
+-- Spawn 7 schnell hintereinander (testet MAX_NOTIFICATIONS = 5)
+RegisterCommand('fb_burst', function()
+    for i = 1, 7 do
+        Wait(150)
+        exports.flarebit:notify({
+            title = 'Burst #' .. i,
+            subtitle = 'Testing maximum stack capacity.',
+            variant = ({ 'info', 'success', 'warning', 'error' })[(i % 4) + 1],
+            duration = 5000
+        })
+    end
+end, false)

@@ -6,6 +6,11 @@
     'use strict';
 
     const CONTAINER_ID = 'flarebit-notification-container';
+    const MAX_NOTIFICATIONS = 5;
+    const ANIMATION_DURATION = 500; // matches CSS transition
+
+    // Active notifications: { id, element, timeout }
+    const activeNotifications = new Map();
 
     // ============================================
     // Icons per Variant (SVG)
@@ -58,6 +63,49 @@
         return el;
     }
 
+    // ============================================
+    // FLIP Animation Helper
+    // First-Last-Invert-Play technique for smooth re-positioning
+    // ============================================
+
+    function captureFirstPositions(container) {
+        const positions = new Map();
+        const children = container.querySelectorAll('.flarebit-notification');
+        children.forEach((child) => {
+            const id = child.dataset.id;
+            positions.set(id, child.getBoundingClientRect().top);
+        });
+        return positions;
+    }
+
+    function animateFromFirstPositions(container, firstPositions) {
+        const children = container.querySelectorAll('.flarebit-notification');
+        children.forEach((child) => {
+            const id = child.dataset.id;
+            const firstTop = firstPositions.get(id);
+            if (firstTop === undefined) return;
+
+            const lastTop = child.getBoundingClientRect().top;
+            const deltaY = firstTop - lastTop;
+            
+            if (deltaY === 0) return;
+
+            // Invert: move element back to first position instantly
+            child.style.transition = 'none';
+            child.style.transform = `translateY(${deltaY}px)`;
+
+            // Play: animate to natural position next frame
+            requestAnimationFrame(() => {
+                child.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+                child.style.transform = '';
+            });
+        });
+    }
+
+    // ============================================
+    // Notification Lifecycle
+    // ============================================
+
     function showNotification(payload) {
         const container = document.getElementById(CONTAINER_ID);
         if (!container) {
@@ -65,32 +113,69 @@
             return;
         }
 
-        const el = createNotificationElement(payload);
-        container.appendChild(el);
+        // Enforce max — remove oldest if at limit
+        if (activeNotifications.size >= MAX_NOTIFICATIONS) {
+            const oldestId = activeNotifications.keys().next().value;
+            removeNotification(oldestId, true);
+        }
 
+        // Capture positions BEFORE inserting new
+        const firstPositions = captureFirstPositions(container);
+
+        // Create + insert new notification at TOP (newest-first)
+        const el = createNotificationElement(payload);
+        container.insertBefore(el, container.firstChild);
+
+        // Animate existing notifications to their new positions
+        animateFromFirstPositions(container, firstPositions);
+
+        // Trigger enter animation for new notification
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 el.classList.add('visible');
             });
         });
 
+        // Schedule auto-hide
         const duration = payload.duration || 4000;
-        setTimeout(() => {
-            removeNotification(el);
+        const timeoutId = setTimeout(() => {
+            removeNotification(payload.id);
         }, duration);
+
+        activeNotifications.set(payload.id, {
+            element: el,
+            timeout: timeoutId
+        });
     }
 
-    function removeNotification(el) {
-        if (!el || !el.parentNode) return;
+    function removeNotification(id, immediate = false) {
+        const entry = activeNotifications.get(id);
+        if (!entry) return;
 
+        clearTimeout(entry.timeout);
+        activeNotifications.delete(id);
+
+        const el = entry.element;
+        const container = document.getElementById(CONTAINER_ID);
+
+        // Capture positions BEFORE removal
+        const firstPositions = container ? captureFirstPositions(container) : new Map();
+
+        // Trigger exit animation
         el.classList.remove('visible');
         el.classList.add('exiting');
 
+        // After exit animation, remove from DOM and shift others
         setTimeout(() => {
             if (el.parentNode) {
                 el.parentNode.removeChild(el);
             }
-        }, 500);
+
+            // Animate remaining notifications to fill the gap
+            if (container) {
+                animateFromFirstPositions(container, firstPositions);
+            }
+        }, immediate ? 0 : ANIMATION_DURATION);
     }
 
     // ============================================
@@ -104,6 +189,14 @@
         switch (data.action) {
             case 'flarebit:notify':
                 showNotification(data.payload || {});
+                break;
+            case 'flarebit:dismiss':
+                if (data.id) removeNotification(data.id);
+                break;
+            case 'flarebit:dismissAll':
+                Array.from(activeNotifications.keys()).forEach((id) => {
+                    removeNotification(id);
+                });
                 break;
             default:
                 console.warn('[Flarebit] Unknown action:', data.action);
