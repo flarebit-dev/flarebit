@@ -384,119 +384,304 @@ body, html {
 }
 
 /* ============================================
-   THEME: CINEMATIC (Sci-Fi Showcase)
+   THEME: CINEMATIC (Edel — Premium Sci-Fi)
    ============================================ */
 
+/* Outer multi-layer glow */
 #flarebit-app[data-theme="cinematic"] .flarebit-notification__glow {
     position: absolute;
-    inset: -2px;
-    border-radius: 20px;
-    background: linear-gradient(
-        135deg,
-        rgba(var(--flarebit-color-primary), 0.7) 0%,
-        rgba(var(--flarebit-color-primary), 0.3) 40%,
-        transparent 60%,
-        rgba(var(--flarebit-color-primary), 0.5) 100%
-    );
-    filter: blur(14px);
-    opacity: 0.85;
+    inset: -3px;
+    border-radius: 22px;
+    background: 
+        radial-gradient(
+            ellipse at 30% 30%,
+            rgba(var(--flarebit-color-primary), 0.5) 0%,
+            transparent 60%
+        ),
+        radial-gradient(
+            ellipse at 70% 70%,
+            rgba(var(--flarebit-color-primary), 0.4) 0%,
+            transparent 60%
+        ),
+        linear-gradient(
+            135deg,
+            rgba(var(--flarebit-color-primary), 0.6) 0%,
+            rgba(var(--flarebit-color-primary), 0.2) 50%,
+            rgba(var(--flarebit-color-primary), 0.5) 100%
+        );
+    filter: blur(20px);
+    opacity: 0.7;
     z-index: 0;
     pointer-events: none;
-    transition: opacity 0.3s var(--flarebit-ease-out);
+    transition: opacity 0.4s var(--flarebit-ease-out), filter 0.4s var(--flarebit-ease-out);
 }
 
+#flarebit-app[data-theme="cinematic"] .flarebit-notification.visible:hover .flarebit-notification__glow {
+    opacity: 1;
+    filter: blur(24px);
+}
+
+/* Inner card */
 #flarebit-app[data-theme="cinematic"] .flarebit-notification__inner {
-    background: linear-gradient(180deg, rgba(8, 6, 14, 0.9) 0%, rgba(4, 2, 8, 0.95) 100%);
-    border: 1px solid rgba(var(--flarebit-color-primary), 0.5);
+    background: 
+        linear-gradient(
+            180deg,
+            rgba(12, 10, 18, 0.92) 0%,
+            rgba(6, 4, 10, 0.96) 100%
+        );
+    border: 1px solid rgba(var(--flarebit-color-primary), 0.45);
     border-radius: 18px;
+    padding: 20px 24px;
+    gap: 18px;
     box-shadow: 
-        0 0 40px rgba(var(--flarebit-color-primary), 0.3),
-        0 20px 60px rgba(0, 0, 0, 0.7),
-        inset 0 1px 0 rgba(var(--flarebit-color-primary), 0.2),
-        inset 0 0 30px rgba(var(--flarebit-color-primary), 0.05);
+        0 0 60px rgba(var(--flarebit-color-primary), 0.25),
+        0 30px 80px rgba(0, 0, 0, 0.8),
+        inset 0 1px 0 rgba(var(--flarebit-color-primary), 0.3),
+        inset 0 -20px 40px rgba(var(--flarebit-color-primary), 0.04),
+        inset 0 0 60px rgba(0, 0, 0, 0.4);
     position: relative;
     overflow: hidden;
 }
 
-/* Cinematic: corner brackets (subtle UI markers) */
-#flarebit-app[data-theme="cinematic"] .flarebit-notification__inner::before,
+/* Subtle inner gradient overlay for depth */
+#flarebit-app[data-theme="cinematic"] .flarebit-notification__inner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(
+        180deg,
+        rgba(var(--flarebit-color-primary), 0.06) 0%,
+        transparent 100%
+    );
+    pointer-events: none;
+    z-index: 0;
+    border-radius: 18px 18px 0 0;
+}
+
+/* Animated scan-line (subtle horizontal sweep) */
 #flarebit-app[data-theme="cinematic"] .flarebit-notification__inner::after {
     content: '';
     position: absolute;
-    width: 12px;
-    height: 12px;
-    border: 1px solid rgba(var(--flarebit-color-primary), 0.6);
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(var(--flarebit-color-primary-bright), 0.6),
+        transparent
+    );
+    box-shadow: 0 0 8px rgba(var(--flarebit-color-primary-bright), 0.6);
+    animation: flarebit-scan-line 4s ease-in-out infinite;
     pointer-events: none;
+    z-index: 3;
 }
 
-#flarebit-app[data-theme="cinematic"] .flarebit-notification__inner::before {
-    top: 6px;
-    left: 6px;
-    border-right: none;
-    border-bottom: none;
+@keyframes flarebit-scan-line {
+    0%, 100% { left: -100%; opacity: 0; }
+    50% { left: 100%; opacity: 1; }
 }
 
-#flarebit-app[data-theme="cinematic"] .flarebit-notification__inner::after {
-    bottom: 6px;
-    right: 6px;
-    border-left: none;
-    border-top: none;
+#flarebit-app[data-theme="cinematic"] .flarebit-notification.visible:hover .flarebit-notification__inner {
+    transform: scale(1.012);
+    box-shadow: 
+        0 0 80px rgba(var(--flarebit-color-primary), 0.35),
+        0 36px 90px rgba(0, 0, 0, 0.85),
+        inset 0 1px 0 rgba(var(--flarebit-color-primary), 0.4),
+        inset 0 -20px 40px rgba(var(--flarebit-color-primary), 0.06),
+        inset 0 0 60px rgba(0, 0, 0, 0.3);
 }
 
-/* Cinematic icon: hexagonal frame */
+/* Corner brackets — refined */
+#flarebit-app[data-theme="cinematic"] .flarebit-notification__inner > .flarebit-notification__icon::before,
+#flarebit-app[data-theme="cinematic"] .flarebit-notification__inner > .flarebit-notification__meta::after {
+    /* placeholder — actual brackets below */
+}
+
+#flarebit-app[data-theme="cinematic"] .flarebit-notification__inner {
+    background-clip: padding-box;
+}
+
+/* Hexagonal Icon Frame */
+#flarebit-app[data-theme="cinematic"] .flarebit-notification__icon {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
 #flarebit-app[data-theme="cinematic"] .flarebit-notification__dot-outer {
-    width: 44px;
-    height: 44px;
+    width: 100%;
+    height: 100%;
     background: 
-        radial-gradient(circle, rgba(var(--flarebit-color-primary), 0.15) 0%, transparent 70%),
-        linear-gradient(135deg, rgba(var(--flarebit-color-primary), 0.2) 0%, transparent 100%);
+        radial-gradient(
+            circle at center,
+            rgba(var(--flarebit-color-primary), 0.25) 0%,
+            rgba(var(--flarebit-color-primary), 0.08) 50%,
+            transparent 80%
+        );
     clip-path: polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
-    border: 1px solid rgba(var(--flarebit-color-primary), 0.6);
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
     box-shadow: 
-        0 0 20px rgba(var(--flarebit-color-primary), 0.4),
-        inset 0 0 15px rgba(var(--flarebit-color-primary), 0.15);
+        0 0 30px rgba(var(--flarebit-color-primary), 0.4),
+        inset 0 0 20px rgba(var(--flarebit-color-primary), 0.12);
+}
+
+/* Hexagon outline (separate layer for crisp edges) */
+#flarebit-app[data-theme="cinematic"] .flarebit-notification__dot-outer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    clip-path: polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
+    background: 
+        linear-gradient(
+            135deg,
+            rgba(var(--flarebit-color-primary), 0.7) 0%,
+            rgba(var(--flarebit-color-primary), 0.3) 100%
+        );
+    z-index: -1;
+    padding: 1px;
+    /* This creates the border via mask trick */
 }
 
 #flarebit-app[data-theme="cinematic"] .flarebit-notification__dot-outer::before {
     content: '';
     position: absolute;
-    inset: -6px;
-    background: radial-gradient(circle, rgba(var(--flarebit-color-primary), 0.3), transparent 70%);
+    inset: -10px;
+    background: radial-gradient(
+        circle,
+        rgba(var(--flarebit-color-primary), 0.35),
+        transparent 70%
+    );
     animation: flarebit-pulse-aura 2.5s ease-in-out infinite;
+    z-index: -2;
 }
 
+/* Replace inner dot with variant-specific SVG icon */
 #flarebit-app[data-theme="cinematic"] .flarebit-notification__dot-inner {
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: rgb(var(--flarebit-color-primary-bright));
-    box-shadow: 
-        0 0 16px rgb(var(--flarebit-color-primary-bright)),
-        0 0 30px rgba(var(--flarebit-color-primary), 0.8),
-        0 0 50px rgba(var(--flarebit-color-primary), 0.4);
+    width: 24px;
+    height: 24px;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
     position: relative;
     z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#flarebit-app[data-theme="cinematic"] .flarebit-notification__dot-inner::before {
+    content: '';
+    width: 22px;
+    height: 22px;
+    background-color: rgb(var(--flarebit-color-primary-bright));
+    filter: drop-shadow(0 0 8px rgb(var(--flarebit-color-primary-bright))) drop-shadow(0 0 16px rgba(var(--flarebit-color-primary), 0.6));
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+}
+
+#flarebit-app[data-theme="cinematic"] .flarebit-notification[data-variant="info"] .flarebit-notification__dot-inner::before {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='22 12 18 12 15 21 9 3 6 12 2 12'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='22 12 18 12 15 21 9 3 6 12 2 12'/%3E%3C/svg%3E");
+}
+
+#flarebit-app[data-theme="cinematic"] .flarebit-notification[data-variant="success"] .flarebit-notification__dot-inner::before {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+}
+
+#flarebit-app[data-theme="cinematic"] .flarebit-notification[data-variant="warning"] .flarebit-notification__dot-inner::before {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z'/%3E%3Cline x1='12' y1='9' x2='12' y2='13'/%3E%3Cline x1='12' y1='17' x2='12.01' y2='17'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z'/%3E%3Cline x1='12' y1='9' x2='12' y2='13'/%3E%3Cline x1='12' y1='17' x2='12.01' y2='17'/%3E%3C/svg%3E");
+}
+
+#flarebit-app[data-theme="cinematic"] .flarebit-notification[data-variant="error"] .flarebit-notification__dot-inner::before {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='18' y1='6' x2='6' y2='18'/%3E%3Cline x1='6' y1='6' x2='18' y2='18'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='18' y1='6' x2='6' y2='18'/%3E%3Cline x1='6' y1='6' x2='18' y2='18'/%3E%3C/svg%3E");
+}
+
+/* Typography — premium */
+#flarebit-app[data-theme="cinematic"] .flarebit-notification__content {
+    z-index: 2;
+    position: relative;
 }
 
 #flarebit-app[data-theme="cinematic"] .flarebit-notification__title {
-    font-weight: 700;
-    letter-spacing: 0.3px;
-    text-shadow: 0 0 20px rgba(var(--flarebit-color-primary), 0.4);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.1px;
+    color: rgba(255, 255, 255, 1);
+    margin-bottom: 5px;
+    text-shadow: 0 0 30px rgba(var(--flarebit-color-primary), 0.3);
 }
 
+#flarebit-app[data-theme="cinematic"] .flarebit-notification__subtitle {
+    font-size: 13.5px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.55);
+    letter-spacing: 0;
+}
+
+/* Meta — premium */
+#flarebit-app[data-theme="cinematic"] .flarebit-notification__meta {
+    z-index: 2;
+    position: relative;
+    padding-left: 18px;
+    border-left: 1px solid rgba(var(--flarebit-color-primary), 0.2);
+    color: rgba(255, 255, 255, 0.65);
+}
+
+#flarebit-app[data-theme="cinematic"] .flarebit-notification__meta-icon {
+    width: 18px;
+    height: 18px;
+    color: rgb(var(--flarebit-color-primary-bright));
+    filter: drop-shadow(0 0 6px rgba(var(--flarebit-color-primary), 0.7));
+}
+
+#flarebit-app[data-theme="cinematic"] .flarebit-notification__meta-time {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Progress bar — premium */
 #flarebit-app[data-theme="cinematic"] .flarebit-notification__progress {
-    background: rgba(var(--flarebit-color-primary), 0.1);
+    background: rgba(var(--flarebit-color-primary), 0.08);
     border-radius: 0;
     height: 3px;
 }
 
 #flarebit-app[data-theme="cinematic"] .flarebit-notification__progress-fill {
-    background: linear-gradient(90deg, transparent 0%, rgb(var(--flarebit-color-primary-bright)) 30%, rgb(var(--flarebit-color-primary-bright)) 70%, transparent 100%);
-    box-shadow: 0 0 12px rgb(var(--flarebit-color-primary-bright)), 0 0 24px rgba(var(--flarebit-color-primary), 0.6);
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(var(--flarebit-color-primary), 0.4) 10%,
+        rgb(var(--flarebit-color-primary-bright)) 50%,
+        rgba(var(--flarebit-color-primary), 0.4) 90%,
+        transparent 100%
+    );
+    box-shadow: 
+        0 0 12px rgb(var(--flarebit-color-primary-bright)),
+        0 0 24px rgba(var(--flarebit-color-primary), 0.7),
+        0 -1px 0 rgba(var(--flarebit-color-primary-bright), 0.3);
 }
 
 /* ============================================
