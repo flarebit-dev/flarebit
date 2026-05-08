@@ -19,7 +19,8 @@ local function notify(options)
             subtitle = options.subtitle or '',
             duration = options.duration or 4000,
             variant = options.variant or 'info',
-            position = options.position or 'top-center'
+            position = options.position or 'top-center',
+            sound = options.sound ~= false  -- default true, false to mute
         }
     })
 end
@@ -169,4 +170,83 @@ RegisterCommand('fb_pos_all', function()
             duration = 8000
         })
     end
+end, false)
+-- ============================================
+-- Volume / Mute API
+-- ============================================
+
+local function setVolume(volume)
+    SendNUIMessage({
+        action = 'flarebit:setVolume',
+        volume = volume
+    })
+end
+
+local function setMuted(muted)
+    SendNUIMessage({
+        action = 'flarebit:setMuted',
+        muted = muted
+    })
+end
+
+exports('setVolume', setVolume)
+exports('setMuted', setMuted)
+
+-- ============================================
+-- STACK 7 TEST: Sound System
+-- ============================================
+
+RegisterCommand('fb_sound_info', function()
+    notify({ title = 'Info Sound', subtitle = 'Listen carefully.', variant = 'info' })
+end, false)
+
+RegisterCommand('fb_sound_success', function()
+    notify({ title = 'Success Sound', subtitle = 'Pleasant chime.', variant = 'success' })
+end, false)
+
+RegisterCommand('fb_sound_warning', function()
+    notify({ title = 'Warning Sound', subtitle = 'Two-tone descending.', variant = 'warning' })
+end, false)
+
+RegisterCommand('fb_sound_error', function()
+    notify({ title = 'Error Sound', subtitle = 'Low buzz.', variant = 'error' })
+end, false)
+
+-- Test silent notification
+RegisterCommand('fb_silent', function()
+    notify({ 
+        title = 'Silent notification', 
+        subtitle = 'No sound played.', 
+        variant = 'info',
+        sound = false
+    })
+end, false)
+
+-- Test all 4 sounds in sequence
+RegisterCommand('fb_sounds', function()
+    local variants = { 'info', 'success', 'warning', 'error' }
+    for i, v in ipairs(variants) do
+        Wait(800)
+        notify({
+            title = v .. ' sound',
+            subtitle = 'Testing audio variant',
+            variant = v,
+            duration = 3000
+        })
+    end
+end, false)
+
+-- Volume control
+RegisterCommand('fb_vol', function(source, args)
+    local vol = tonumber(args[1]) or 0.4
+    setVolume(vol)
+    print('^5[Flarebit]^7 Volume set to ' .. vol)
+end, false)
+
+-- Mute toggle
+local isMuted = false
+RegisterCommand('fb_mute', function()
+    isMuted = not isMuted
+    setMuted(isMuted)
+    print('^5[Flarebit]^7 Muted: ' .. tostring(isMuted))
 end, false)

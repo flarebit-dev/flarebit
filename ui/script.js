@@ -14,8 +14,140 @@
     const ANIMATION_DURATION_EXIT = 400;
     const ANIMATION_DURATION_REPOSITION = 500;
 
-    // Global registry: id -> { element, ..., position }
     const activeNotifications = new Map();
+
+    // ============================================
+    // Sound System (Web Audio API)
+    // ============================================
+
+    let audioContext = null;
+    let globalVolume = 0.4;
+    let globalMuted = false;
+
+    function getAudioContext() {
+        if (!audioContext) {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                console.warn('[Flarebit] Web Audio not supported');
+                return null;
+            }
+        }
+        return audioContext;
+    }
+
+    /**
+     * Plays a sound for the given variant.
+     * Each variant has a distinct sonic identity.
+     */
+    function playSound(variant) {
+        if (globalMuted) return;
+        const ctx = getAudioContext();
+        if (!ctx) return;
+
+        // Resume if suspended (browser autoplay policy)
+        if (ctx.state === 'suspended') {
+            ctx.resume();
+        }
+
+        const now = ctx.currentTime;
+
+        switch (variant) {
+            case 'success':
+                playSuccessSound(ctx, now);
+                break;
+            case 'error':
+                playErrorSound(ctx, now);
+                break;
+            case 'warning':
+                playWarningSound(ctx, now);
+                break;
+            case 'info':
+            default:
+                playInfoSound(ctx, now);
+                break;
+        }
+    }
+
+    // Info: subtle two-tone chime (ascending)
+    function playInfoSound(ctx, now) {
+        const gain = ctx.createGain();
+        gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(globalVolume * 0.5, now + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+        const osc1 = ctx.createOscillator();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(880, now);
+        osc1.frequency.linearRampToValueAtTime(1100, now + 0.08);
+        osc1.connect(gain);
+        osc1.start(now);
+        osc1.stop(now + 0.4);
+    }
+
+    // Success: pleasant bright two-note (major third up)
+    function playSuccessSound(ctx, now) {
+        const gain = ctx.createGain();
+        gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(globalVolume * 0.6, now + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+
+        const osc1 = ctx.createOscillator();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(659.25, now); // E5
+        osc1.connect(gain);
+        osc1.start(now);
+        osc1.stop(now + 0.15);
+
+        const osc2 = ctx.createOscillator();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(987.77, now + 0.1); // B5
+        osc2.connect(gain);
+        osc2.start(now + 0.1);
+        osc2.stop(now + 0.5);
+    }
+
+    // Warning: descending two-tone (attention-grabbing but not alarming)
+    function playWarningSound(ctx, now) {
+        const gain = ctx.createGain();
+        gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(globalVolume * 0.55, now + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+
+        const osc1 = ctx.createOscillator();
+        osc1.type = 'triangle';
+        osc1.frequency.setValueAtTime(660, now);
+        osc1.connect(gain);
+        osc1.start(now);
+        osc1.stop(now + 0.18);
+
+        const osc2 = ctx.createOscillator();
+        osc2.type = 'triangle';
+        osc2.frequency.setValueAtTime(495, now + 0.18);
+        osc2.connect(gain);
+        osc2.start(now + 0.18);
+        osc2.stop(now + 0.5);
+    }
+
+    // Error: short low buzz (urgent but tasteful)
+    function playErrorSound(ctx, now) {
+        const gain = ctx.createGain();
+        gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(globalVolume * 0.55, now + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+        const osc1 = ctx.createOscillator();
+        osc1.type = 'sawtooth';
+        osc1.frequency.setValueAtTime(220, now);
+        osc1.frequency.exponentialRampToValueAtTime(110, now + 0.3);
+        osc1.connect(gain);
+        osc1.start(now);
+        osc1.stop(now + 0.35);
+    }
 
     // ============================================
     // Icons per Variant
@@ -200,7 +332,6 @@
             return;
         }
 
-        // Enforce max per position
         const inThisPosition = getNotificationsByPosition(position);
         if (inThisPosition.length >= MAX_NOTIFICATIONS_PER_POSITION) {
             const oldest = inThisPosition[0];
@@ -210,10 +341,6 @@
         const firstPositions = captureFirstPositions(container);
 
         const el = createNotificationElement(payload);
-
-        // Insertion order depends on position
-        // For TOP positions: insert at start (newest on top)
-        // For BOTTOM positions: insert at start too — flex-direction: column-reverse handles ordering
         container.insertBefore(el, container.firstChild);
 
         animateFromFirstPositions(container, firstPositions);
@@ -225,6 +352,11 @@
         });
 
         attachHoverHandlers(el, payload.id);
+
+        // Play sound (unless explicitly muted)
+        if (payload.sound !== false) {
+            playSound(payload.variant || 'info');
+        }
 
         const duration = payload.duration || 4000;
 
@@ -310,10 +442,37 @@
                     removeNotification(id);
                 });
                 break;
+            case 'flarebit:setVolume':
+                if (typeof data.volume === 'number') {
+                    globalVolume = Math.max(0, Math.min(1, data.volume));
+                }
+                break;
+            case 'flarebit:setMuted':
+                globalMuted = !!data.muted;
+                break;
             default:
                 console.warn('[Flarebit] Unknown action:', data.action);
         }
     });
+
+    // ============================================
+    // Audio Init Hack (browser autoplay policy)
+    // ============================================
+    // First user interaction unlocks audio. We trigger it on first message.
+    let audioUnlocked = false;
+    function unlockAudio() {
+        if (audioUnlocked) return;
+        const ctx = getAudioContext();
+        if (ctx && ctx.state === 'suspended') {
+            ctx.resume().then(() => {
+                audioUnlocked = true;
+            });
+        } else {
+            audioUnlocked = true;
+        }
+    }
+    window.addEventListener('click', unlockAudio, { once: true });
+    window.addEventListener('keydown', unlockAudio, { once: true });
 
     console.log('[Flarebit] NUI script loaded.');
 })();
