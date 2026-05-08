@@ -5,15 +5,20 @@
 (function() {
     'use strict';
 
-    const CONTAINER_ID = 'flarebit-notification-container';
-    const MAX_NOTIFICATIONS = 5;
+    const VALID_POSITIONS = [
+        'top-left', 'top-center', 'top-right',
+        'bottom-left', 'bottom-center', 'bottom-right'
+    ];
+    const DEFAULT_POSITION = 'top-center';
+    const MAX_NOTIFICATIONS_PER_POSITION = 5;
     const ANIMATION_DURATION_EXIT = 400;
     const ANIMATION_DURATION_REPOSITION = 500;
 
+    // Global registry: id -> { element, ..., position }
     const activeNotifications = new Map();
 
     // ============================================
-    // Icons per Variant (SVG)
+    // Icons per Variant
     // ============================================
 
     const ICONS = {
@@ -24,7 +29,19 @@
     };
 
     // ============================================
-    // Notification Renderer
+    // Utility
+    // ============================================
+
+    function getContainerForPosition(position) {
+        return document.querySelector(`.flarebit-notification-container[data-position="${position}"]`);
+    }
+
+    function getNotificationsByPosition(position) {
+        return Array.from(activeNotifications.values()).filter(n => n.position === position);
+    }
+
+    // ============================================
+    // Renderer
     // ============================================
 
     function createNotificationElement(payload) {
@@ -113,8 +130,7 @@
         const fill = el.querySelector('.flarebit-notification__progress-fill');
         if (!fill) return;
 
-        // Use Web Animations API for accurate pausing
-        const animation = fill.animate(
+        return fill.animate(
             [
                 { transform: 'scaleX(1)' },
                 { transform: 'scaleX(0)' }
@@ -125,12 +141,10 @@
                 fill: 'forwards'
             }
         );
-
-        return animation;
     }
 
     // ============================================
-    // Hover Pause / Resume
+    // Hover Pause / Click Dismiss
     // ============================================
 
     function attachHoverHandlers(el, id) {
@@ -145,7 +159,6 @@
             entry.paused = true;
             entry.remaining = remaining;
 
-            // Pause progress animation
             if (entry.progressAnimation) {
                 entry.progressAnimation.pause();
             }
@@ -162,7 +175,6 @@
                 removeNotification(id);
             }, entry.remaining);
 
-            // Resume progress animation
             if (entry.progressAnimation) {
                 entry.progressAnimation.play();
             }
@@ -178,20 +190,30 @@
     // ============================================
 
     function showNotification(payload) {
-        const container = document.getElementById(CONTAINER_ID);
+        const position = VALID_POSITIONS.includes(payload.position) 
+            ? payload.position 
+            : DEFAULT_POSITION;
+
+        const container = getContainerForPosition(position);
         if (!container) {
-            console.error('[Flarebit] Container not found');
+            console.error('[Flarebit] Container not found for position:', position);
             return;
         }
 
-        if (activeNotifications.size >= MAX_NOTIFICATIONS) {
-            const oldestId = activeNotifications.keys().next().value;
-            removeNotification(oldestId, true);
+        // Enforce max per position
+        const inThisPosition = getNotificationsByPosition(position);
+        if (inThisPosition.length >= MAX_NOTIFICATIONS_PER_POSITION) {
+            const oldest = inThisPosition[0];
+            removeNotification(oldest.id, true);
         }
 
         const firstPositions = captureFirstPositions(container);
 
         const el = createNotificationElement(payload);
+
+        // Insertion order depends on position
+        // For TOP positions: insert at start (newest on top)
+        // For BOTTOM positions: insert at start too — flex-direction: column-reverse handles ordering
         container.insertBefore(el, container.firstChild);
 
         animateFromFirstPositions(container, firstPositions);
@@ -206,10 +228,8 @@
 
         const duration = payload.duration || 4000;
 
-        // Start progress bar animation (slight delay to sync with entry)
         setTimeout(() => {
             const animation = startProgressAnimation(el, duration);
-
             const entry = activeNotifications.get(payload.id);
             if (entry) {
                 entry.progressAnimation = animation;
@@ -221,6 +241,7 @@
         }, duration);
 
         activeNotifications.set(payload.id, {
+            id: payload.id,
             element: el,
             timeout: timeoutId,
             duration: duration,
@@ -228,6 +249,7 @@
             paused: false,
             remaining: duration,
             progressAnimation: null,
+            position: position,
             payload: payload
         });
     }
@@ -238,7 +260,6 @@
 
         clearTimeout(entry.timeout);
 
-        // Cancel progress animation
         if (entry.progressAnimation) {
             entry.progressAnimation.cancel();
         }
@@ -246,7 +267,7 @@
         activeNotifications.delete(id);
 
         const el = entry.element;
-        const container = document.getElementById(CONTAINER_ID);
+        const container = getContainerForPosition(entry.position);
 
         el.style.transition = '';
         el.style.transform = '';

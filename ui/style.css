@@ -26,10 +26,20 @@ body, html {
 }
 
 /* ============================================
-   Notification Container
+   Easing Curves
    ============================================ */
 
-#flarebit-notification-container {
+:root {
+    --flarebit-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --flarebit-ease-in: cubic-bezier(0.4, 0, 0.6, 1);
+    --flarebit-ease-spring: cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+/* ============================================
+   Notification Containers (per position)
+   ============================================ */
+
+.flarebit-notification-container {
     position: fixed;
     display: flex;
     flex-direction: column;
@@ -41,26 +51,47 @@ body, html {
     padding: 8px 0;
 }
 
-#flarebit-notification-container[data-position="top-center"] {
-    top: 40px;
+/* TOP positions */
+.flarebit-notification-container[data-position="top-left"] {
+    top: 30px;
+    left: 30px;
+    align-items: flex-start;
+}
+
+.flarebit-notification-container[data-position="top-center"] {
+    top: 30px;
     left: 50%;
     transform: translateX(-50%);
     align-items: center;
 }
 
-/* ============================================
-   Easing Curves (CSS Variables for consistency)
-   ============================================ */
+.flarebit-notification-container[data-position="top-right"] {
+    top: 30px;
+    right: 30px;
+    align-items: flex-end;
+}
 
-:root {
-    /* Smooth out (entrance) — feels like spring settling */
-    --flarebit-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-    
-    /* Smooth in (exit) — feels intentional, not abrupt */
-    --flarebit-ease-in: cubic-bezier(0.4, 0, 0.6, 1);
-    
-    /* Spring-like (for stack repositioning) */
-    --flarebit-ease-spring: cubic-bezier(0.34, 1.3, 0.64, 1);
+/* BOTTOM positions — reverse direction so newest appears at bottom */
+.flarebit-notification-container[data-position="bottom-left"] {
+    bottom: 30px;
+    left: 30px;
+    align-items: flex-start;
+    flex-direction: column-reverse;
+}
+
+.flarebit-notification-container[data-position="bottom-center"] {
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    align-items: center;
+    flex-direction: column-reverse;
+}
+
+.flarebit-notification-container[data-position="bottom-right"] {
+    bottom: 30px;
+    right: 30px;
+    align-items: flex-end;
+    flex-direction: column-reverse;
 }
 
 /* ============================================
@@ -108,17 +139,14 @@ body, html {
 }
 
 /* ============================================
-   Notification — Layout & Animation
+   Notification — Base Layout
    ============================================ */
 
 .flarebit-notification {
     position: relative;
     width: 480px;
     pointer-events: auto;
-    
-    /* Initial state: hidden above container, slightly scaled, blurred */
     opacity: 0;
-    transform: translateY(-30px) scale(0.94);
     filter: blur(4px);
     
     transition: 
@@ -130,14 +158,68 @@ body, html {
     will-change: transform, opacity, filter;
 }
 
-/* Visible state */
 .flarebit-notification.visible {
     opacity: 1;
-    transform: translateY(0) scale(1);
     filter: blur(0);
+    transform: translate(0, 0) scale(1);
 }
 
-/* Hover state — subtle lift */
+/* ============================================
+   Position-specific Enter Animations
+   ============================================ */
+
+/* TOP positions — slide down from above */
+.flarebit-notification-container[data-position^="top"] .flarebit-notification {
+    transform: translateY(-30px) scale(0.94);
+}
+
+/* BOTTOM positions — slide up from below */
+.flarebit-notification-container[data-position^="bottom"] .flarebit-notification {
+    transform: translateY(30px) scale(0.94);
+}
+
+/* RIGHT positions override — slide from right */
+.flarebit-notification-container[data-position$="right"] .flarebit-notification {
+    transform: translateX(40px) scale(0.94);
+}
+
+/* LEFT positions override — slide from left */
+.flarebit-notification-container[data-position$="left"] .flarebit-notification {
+    transform: translateX(-40px) scale(0.94);
+}
+
+/* ============================================
+   Position-specific Exit Animations
+   ============================================ */
+
+.flarebit-notification.exiting {
+    opacity: 0 !important;
+    filter: blur(6px) !important;
+    transition: 
+        opacity 0.4s var(--flarebit-ease-in),
+        transform 0.4s var(--flarebit-ease-in),
+        filter 0.3s var(--flarebit-ease-in) !important;
+}
+
+/* Default exit: slide right (top-center, bottom-center) */
+.flarebit-notification-container[data-position$="center"] .flarebit-notification.exiting {
+    transform: translateX(60px) scale(0.92) !important;
+}
+
+/* Right positions exit right */
+.flarebit-notification-container[data-position$="right"] .flarebit-notification.exiting {
+    transform: translateX(80px) scale(0.92) !important;
+}
+
+/* Left positions exit left */
+.flarebit-notification-container[data-position$="left"] .flarebit-notification.exiting {
+    transform: translateX(-80px) scale(0.92) !important;
+}
+
+/* ============================================
+   Notification — Visual Components
+   ============================================ */
+
 .flarebit-notification.visible:hover .flarebit-notification__inner {
     transform: scale(1.015);
     box-shadow: 
@@ -147,18 +229,6 @@ body, html {
         inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-/* Exit animation — slide right + fade */
-.flarebit-notification.exiting {
-    opacity: 0 !important;
-    transform: translateX(60px) scale(0.92) !important;
-    filter: blur(6px) !important;
-    transition: 
-        opacity 0.4s var(--flarebit-ease-in),
-        transform 0.4s var(--flarebit-ease-in),
-        filter 0.3s var(--flarebit-ease-in) !important;
-}
-
-/* Outer glow */
 .flarebit-notification__glow {
     position: absolute;
     inset: -1px;
@@ -181,7 +251,6 @@ body, html {
     opacity: 0.9;
 }
 
-/* Inner card */
 .flarebit-notification__inner {
     position: relative;
     z-index: 1;
@@ -322,6 +391,7 @@ body, html {
     font-weight: 500;
     letter-spacing: 0.2px;
 }
+
 /* ============================================
    Progress Timer
    ============================================ */
@@ -354,14 +424,4 @@ body, html {
     box-shadow: 0 0 8px rgba(var(--flarebit-color-primary), 0.6);
     transform-origin: left center;
     transform: scaleX(1);
-    /* Animation set via JS for accurate timing */
-}
-
-.flarebit-notification__progress-fill.paused {
-    animation-play-state: paused !important;
-}
-
-@keyframes flarebit-progress-shrink {
-    from { transform: scaleX(1); }
-    to { transform: scaleX(0); }
 }

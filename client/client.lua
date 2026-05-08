@@ -18,7 +18,8 @@ local function notify(options)
             title = options.title or 'Notification',
             subtitle = options.subtitle or '',
             duration = options.duration or 4000,
-            variant = options.variant or 'info'
+            variant = options.variant or 'info',
+            position = options.position or 'top-center'
         }
     })
 end
@@ -120,4 +121,52 @@ RegisterCommand('fb_cursor', function()
     local current = IsNuiFocused()
     SetNuiFocus(not current, not current)
     print('^5[Flarebit]^7 NUI cursor: ' .. tostring(not current))
+end, false)
+-- ============================================
+-- STACK 6 TEST: Position System
+-- ============================================
+
+RegisterCommand('fb_pos_tl', function()
+    notify({ title = 'Top Left', subtitle = 'Position: top-left', variant = 'info', position = 'top-left' })
+end, false)
+
+RegisterCommand('fb_pos_tc', function()
+    notify({ title = 'Top Center', subtitle = 'Position: top-center', variant = 'success', position = 'top-center' })
+end, false)
+
+RegisterCommand('fb_pos_tr', function()
+    notify({ title = 'Top Right', subtitle = 'Position: top-right', variant = 'warning', position = 'top-right' })
+end, false)
+
+RegisterCommand('fb_pos_bl', function()
+    notify({ title = 'Bottom Left', subtitle = 'Position: bottom-left', variant = 'error', position = 'bottom-left' })
+end, false)
+
+RegisterCommand('fb_pos_bc', function()
+    notify({ title = 'Bottom Center', subtitle = 'Position: bottom-center', variant = 'info', position = 'bottom-center' })
+end, false)
+
+RegisterCommand('fb_pos_br', function()
+    notify({ title = 'Bottom Right', subtitle = 'Position: bottom-right', variant = 'success', position = 'bottom-right' })
+end, false)
+
+-- Spawn one in each position simultaneously
+RegisterCommand('fb_pos_all', function()
+    local positions = {
+        { pos = 'top-left', variant = 'info' },
+        { pos = 'top-center', variant = 'success' },
+        { pos = 'top-right', variant = 'warning' },
+        { pos = 'bottom-left', variant = 'error' },
+        { pos = 'bottom-center', variant = 'info' },
+        { pos = 'bottom-right', variant = 'success' }
+    }
+    for _, p in ipairs(positions) do
+        notify({
+            title = 'Position: ' .. p.pos,
+            subtitle = 'Multi-position test',
+            variant = p.variant,
+            position = p.pos,
+            duration = 8000
+        })
+    end
 end, false)
